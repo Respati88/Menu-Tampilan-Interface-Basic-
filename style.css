@@ -1,0 +1,15 @@
+/* SEBELUM — flip horizontal */
+.menu-card.flipped .card-flipper {
+  transform: rotateY(180deg);
+}
+.card-back {
+  transform: rotateY(-180deg);
+}
+
+/* SESUDAH — flip vertikal */
+.menu-card.flipped .card-flipper {
+  transform: rotateX(180deg);   /* rotasi pada sumbu X = gerak atas-bawah */
+}
+.card-back {
+  transform: rotateX(-180deg);  /* sisi belakang dimulai terbalik di sumbu X */
+}

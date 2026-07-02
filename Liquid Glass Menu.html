@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liquid Glass Menu</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 30% 20%, #1a1a2e 0%, #0d0d14 60%, #000 100%);
+      font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    }
+
+    /* ─── Scene wrapper ─── */
+    .scene {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      padding: 2.5rem;
+    }
+
+    /* ─── Outer glass container ─── */
+    .menu-container {
+      position: relative;
+      background: linear-gradient(145deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 30px;
+      padding: 16px 14px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow:
+        0 8px 40px rgba(0,0,0,0.50),
+        0 2px 8px rgba(0,0,0,0.30);
+    }
+
+    /* ─── Individual card ─── */
+    .menu-card {
+      position: relative;
+      width: 240px;
+      height: 68px;
+      border-radius: 22px;
+      margin: 6px 0;
+      cursor: pointer;
+      perspective: 900px;
+
+      /* float animation per card — removed on hover/flip */
+      --glow-color: transparent;
+    }
+
+    .menu-card:nth-child(1) { animation: floatA 3.8s ease-in-out infinite; }
+    .menu-card:nth-child(2) { animation: floatA 4.3s ease-in-out infinite 0.65s; }
+    .menu-card:nth-child(3) { animation: floatA 3.5s ease-in-out infinite 1.25s; }
+    .menu-card:nth-child(4) { animation: floatA 4.6s ease-in-out infinite 1.85s; }
+
+    .menu-card.hovered,
+    .menu-card.flipped {
+      animation: none !important;
+    }
+
+    @keyframes floatA {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-5px); }
+    }
+
+    /* ─── Inner flipper (rotates on click) ─── */
+    .card-flipper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      /* KEY CHANGE: rotate on X axis = vertical flip */
+      transition: transform 0.65s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .menu-card.flipped .card-flipper {
+      transform: rotateX(180deg);
+    }
+
+    /* ─── Shared face styles ─── */
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 22px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      overflow: hidden;
+    }
+
+    /* ─── Glass surface shared ─── */
+    .glass-surface {
+      position: absolute;
+      inset: 0;
+      border-radius: 22px;
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.18) 0%,
+        rgba(255,255,255,0.06) 50%,
+        rgba(255,255,255,0.10) 100%
+      );
+      border: 1px solid rgba(255,255,255,0.22);
+      border-bottom-color: rgba(255,255,255,0.08);
+      border-top-color: rgba(255,255,255,0.35);
+      backdrop-filter: blur(28px) saturate(1.6);
+      -webkit-backdrop-filter: blur(28px) saturate(1.6);
+      box-shadow:
+        0 2px 0px rgba(255,255,255,0.25) inset,
+        0 -1px 0px rgba(0,0,0,0.20) inset,
+        0 8px 32px rgba(0,0,0,0.40),
+        0 1px 2px rgba(0,0,0,0.25);
+      transition:
+        box-shadow 0.45s cubic-bezier(0.23, 1, 0.32, 1),
+        background 0.35s ease;
+    }
+
+    /* top specular streak */
+    .glass-surface::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 22px;
+      background: linear-gradient(
+        160deg,
+        rgba(255,255,255,0.30) 0%,
+        transparent 42%,
+        rgba(255,255,255,0.05) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* top-half shimmer */
+    .glass-surface::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 50%;
+      border-radius: 22px 22px 0 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.16) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    /* hover lift effect on glass-surface */
+    .menu-card.hovered .card-front .glass-surface {
+      box-shadow:
+        0 2px 0px rgba(255,255,255,0.30) inset,
+        0 -1px 0px rgba(0,0,0,0.20) inset,
+        0 20px 60px rgba(0,0,0,0.55),
+        0 4px 12px rgba(0,0,0,0.30),
+        0 0 44px var(--glow-color);
+    }
+
+    /* ─── FRONT face ─── */
+    .card-front {
+      transform: rotateX(0deg);
+    }
+
+    .card-front-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      height: 100%;
+    }
+
+    /* shine blob */
+    .card-shine {
+      position: absolute;
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.20) 0%, transparent 70%);
+      top: -22px; left: -12px;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.35s;
+    }
+    .menu-card.hovered .card-shine { opacity: 1; }
+
+    /* three dots */
+    .card-dots {
+      position: absolute;
+      top: 11px; right: 15px;
+      display: flex; gap: 3px;
+      z-index: 3;
+    }
+    .card-dots span {
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.45);
+      display: block;
+    }
+
+    /* icon pill */
+    .card-icon {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .card-icon svg {
+      width: 17px; height: 17px;
+      fill: none;
+      stroke: rgba(255,255,255,0.88);
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .card-text { display: flex; flex-direction: column; gap: 2px; }
+    .card-title {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.92);
+      letter-spacing: 0.01em;
+    }
+    .card-sub {
+      font-size: 10.5px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.40);
+      letter-spacing: 0.025em;
+    }
+
+    /* ─── BACK face ─── */
+    /* rotate -180deg on X so it appears on the other side of the vertical flip */
+    .card-back {
+      transform: rotateX(-180deg);
+    }
+
+    .card-back-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 12px;
+      height: 100%;
+      gap: 8px;
+    }
+
+    .flip-action {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      flex: 1;
+      padding: 8px 6px;
+      border-radius: 13px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.10);
+      transition: background 0.2s, transform 0.15s;
+      user-select: none;
+    }
+    .flip-action:hover {
+      background: rgba(255,255,255,0.16);
+      transform: scale(1.05);
+    }
+    .flip-action:active { transform: scale(0.97); }
+
+    .flip-action svg {
+      width: 17px; height: 17px;
+      fill: none;
+      stroke: rgba(255,255,255,0.80);
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .flip-action span {
+      font-size: 9px;
+      color: rgba(255,255,255,0.50);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Per-card color glow + icon accent ─── */
+    .menu-card[data-color="amber"] {
+      --glow-color: rgba(230,160,40,0.32);
+    }
+    .menu-card[data-color="amber"] .card-icon {
+      background: rgba(255,185,60,0.18);
+      border-color: rgba(255,185,60,0.30);
+    }
+    .menu-card[data-color="amber"].hovered .glass-surface {
+      background: linear-gradient(135deg, rgba(255,195,80,0.18) 0%, rgba(255,195,80,0.05) 50%, rgba(255,255,255,0.08) 100%);
+    }
+
+    .menu-card[data-color="blue"] {
+      --glow-color: rgba(60,140,255,0.30);
+    }
+    .menu-card[data-color="blue"] .card-icon {
+      background: rgba(80,160,255,0.15);
+      border-color: rgba(80,160,255,0.28);
+    }
+    .menu-card[data-color="blue"].hovered .glass-surface {
+      background: linear-gradient(135deg, rgba(80,160,255,0.16) 0%, rgba(80,160,255,0.04) 50%, rgba(255,255,255,0.08) 100%);
+    }
+
+    .menu-card[data-color="teal"] {
+      --glow-color: rgba(40,200,170,0.30);
+    }
+    .menu-card[data-color="teal"] .card-icon {
+      background: rgba(40,200,170,0.15);
+      border-color: rgba(40,200,170,0.28);
+    }
+    .menu-card[data-color="teal"].hovered .glass-surface {
+      background: linear-gradient(135deg, rgba(40,200,170,0.15) 0%, rgba(40,200,170,0.04) 50%, rgba(255,255,255,0.08) 100%);
+    }
+
+    .menu-card[data-color="rose"] {
+      --glow-color: rgba(255,80,120,0.28);
+    }
+    .menu-card[data-color="rose"] .card-icon {
+      background: rgba(255,100,130,0.15);
+      border-color: rgba(255,100,130,0.28);
+    }
+    .menu-card[data-color="rose"].hovered .glass-surface {
+      background: linear-gradient(135deg, rgba(255,100,130,0.15) 0%, rgba(255,100,130,0.04) 50%, rgba(255,255,255,0.08) 100%);
+    }
+
+    /* ─── 3D tilt on hover (JS-driven, applied to flipper) ─── */
+    .card-flipper {
+      will-change: transform;
+    }
+
+    /* ─── Hint label ─── */
+    .hint {
+      text-align: center;
+      font-size: 10.5px;
+      color: rgba(255,255,255,0.22);
+      margin-top: 20px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="menu-container">
+
+    <!-- Card 1: Personal -->
+    <div class="menu-card" data-color="amber">
+      <div class="card-flipper">
+
+        <div class="card-face card-front">
+          <div class="glass-surface"></div>
+          <div class="card-shine"></div>
+          <div class="card-dots"><span></span><span></span><span></span></div>
+          <div class="card-front-content">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="card-text">
+              <div class="card-title">Personal</div>
+              <div class="card-sub">Your profile &amp; settings</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-face card-back">
+          <div class="glass-surface"></div>
+          <div class="card-back-content">
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+              <span>Settings</span>
+            </div>
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </div>
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <span>Sign out</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Card 2: Do Not Disturb -->
+    <div class="menu-card" data-color="blue">
+      <div class="card-flipper">
+
+        <div class="card-face card-front">
+          <div class="glass-surface"></div>
+          <div class="card-shine"></div>
+          <div class="card-dots"><span></span><span></span><span></span></div>
+          <div class="card-front-content">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.57a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div class="card-text">
+              <div class="card-title">Do Not Disturb</div>
+              <div class="card-sub">Focus mode active</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-face card-back">
+          <div class="glass-surface"></div>
+          <div class="card-back-content">
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span>1 hour</span>
+            </div>
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>8 hours</span>
+            </div>
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><line x1="23" y1="1" x2="1" y2="23"/><path d="M17.57 17.57A13.94 13.94 0 0 1 12 19c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/></svg>
+              <span>Turn off</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Card 3: Sleep -->
+    <div class="menu-card" data-color="teal">
+      <div class="card-flipper">
+
+        <div class="card-face card-front">
+          <div class="glass-surface"></div>
+          <div class="card-shine"></div>
+          <div class="card-dots"><span></span><span></span><span></span></div>
+          <div class="card-front-content">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </div>
+            <div class="card-text">
+              <div class="card-title">Sleep</div>
+              <div class="card-sub">Scheduled 11:00 PM</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-face card-back">
+          <div class="glass-surface"></div>
+          <div class="card-back-content">
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              <span>Tonight</span>
+            </div>
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Schedule</span>
+            </div>
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>Cancel</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Card 4: Focus Flow -->
+    <div class="menu-card" data-color="rose">
+      <div class="card-flipper">
+
+        <div class="card-face card-front">
+          <div class="glass-surface"></div>
+          <div class="card-shine"></div>
+          <div class="card-dots"><span></span><span></span><span></span></div>
+          <div class="card-front-content">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div class="card-text">
+              <div class="card-title">Focus Flow</div>
+              <div class="card-sub">Deep work mode</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-face card-back">
+          <div class="glass-surface"></div>
+          <div class="card-back-content">
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Start</span>
+            </div>
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              <span>Pause</span>
+            </div>
+            <div class="flip-action">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>Info</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /.menu-container -->
+
+  <p class="hint">hover to lift &nbsp;·&nbsp; click to flip</p>
+</div><!-- /.scene -->
+
+<script>
+  const cards = document.querySelectorAll('.menu-card');
+
+  cards.forEach(card => {
+    const flipper = card.querySelector('.card-flipper');
+    let isFlipped = false;
+    let rafId;
+
+    /* ── Hover: 3D tilt tracking ── */
+    card.addEventListener('mouseenter', () => {
+      if (isFlipped) return;
+      card.classList.add('hovered');
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.classList.remove('hovered');
+      cancelAnimationFrame(rafId);
+      if (!isFlipped) {
+        flipper.style.transform = '';
+      }
+    });
+
+    card.addEventListener('mousemove', e => {
+      if (isFlipped) return;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const r   = card.getBoundingClientRect();
+        const cx  = r.left + r.width  / 2;
+        const cy  = r.top  + r.height / 2;
+        const dx  = (e.clientX - cx) / (r.width  / 2);   // -1 … +1
+        const dy  = (e.clientY - cy) / (r.height / 2);   // -1 … +1
+        const rX  = -dy * 10;   // tilt up/down
+        const rY  =  dx *  8;   // tilt left/right
+        flipper.style.transform = `rotateX(${rX}deg) rotateY(${rY}deg) translateY(-10px)`;
+      });
+    });
+
+    /* ── Click: vertical flip (rotateX 180°) ── */
+    card.addEventListener('click', e => {
+      if (e.target.closest('.flip-action')) return;
+      isFlipped = !isFlipped;
+      cancelAnimationFrame(rafId);
+      card.classList.remove('hovered');
+
+      if (isFlipped) {
+        card.classList.add('flipped');
+        flipper.style.transform = '';      // CSS class handles rotateX(180deg)
+      } else {
+        card.classList.remove('flipped');
+        flipper.style.transform = '';
+      }
+    });
+
+    /* ── Clicking an action flips back ── */
+    card.querySelectorAll('.flip-action').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        isFlipped = false;
+        card.classList.remove('flipped');
+        flipper.style.transform = '';
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
